@@ -24,10 +24,16 @@ class CityList:
 class Address(Field):
     def __init__(self, city, street, city_list: CityList):
         self.city = city
-        self.street = street
+        self.street = self.normalize_street(street)
         self.city_list = city_list
-        super().__init__(f"{city}, {street}")
+        super().__init__(f"{city}, {self.street}")
         self.validate()
+
+    def normalize_street(self, street):
+        street = street.strip()
+        if not street.lower().startswith("вул."):
+            street = "вул. " + street
+        return street
 
     def validate(self):
         if not self.city_list.is_valid(self.city):
@@ -49,22 +55,26 @@ class Address(Field):
 def main():
     allowed = CityList(["Київ", "Львів", "Одеса", "Харків", "Дніпро"])
 
-    allowed.print_choices()
+    # вибір міста з перевіркою
+    city = None
+    while city is None:
+        allowed.print_choices()
+        try:
+            choice = int(input("Введіть номер міста зі списку: ").strip())
+            city = allowed.get_by_index(choice)
+        except Exception as e:
+            print("Помилка:", e)
 
-    try:
-        choice = int(input("Введіть номер міста зі списку: ").strip())
-        city = allowed.get_by_index(choice)
-    except Exception as e:
-        print("Помилка:", e)
-        return
+    # введення вулиці з перевіркою
+    address = None
+    while address is None:
+        street = input("Введіть вулицю та номер (наприклад, 'Шевченка 10'): ").strip()
+        try:
+            address = Address(city, street, allowed)
+        except ValueError as e:
+            print("Помилка:", e)
 
-    street = input("Введіть вулицю та номер (наприклад, 'вул. Шевченка 10'): ").strip()
-
-    try:
-        address = Address(city, street, allowed)
-        print("Збережено адресу:", address)
-    except ValueError as e:
-        print("Помилка:", e)
+    print("Збережено адресу:", address)
 
 
 if __name__ == "__main__":
